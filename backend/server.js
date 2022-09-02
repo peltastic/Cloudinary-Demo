@@ -4,9 +4,12 @@ const cors = require("cors");
 const multiparty = require("multiparty");
 const dotenv = require("dotenv");
 dotenv.config();
-
 const app = express();
+
+app.use(express.json());
 app.use(cors());
+
+const port = process.env.PORT;
 
 cloudinary.config({
   secure: true,
@@ -15,39 +18,36 @@ cloudinary.config({
   api_secret: process.env.API_SECRET,
 });
 
-// Log the configuration
-console.log(cloudinary.config());
-
-app.get("/test", (req, res) => {
-  return res.status(200).send("working");
-});
-
 app.post("/upload", async function (req, res) {
-  const form = new multiparty.Form({ maxFieldsSize: "50MB" });
+  const urls = [];
+  const form = new multiparty.Form({ maxFieldsSize: "20MB" });
   form.parse(req, async function (err, fields, files) {
-    // console.log(fields, files, err);
     const options = {
       use_filename: true,
       unique_filename: false,
       overwrite: true,
       folder: "/test",
     };
-    for (let i = 0; i < fields.file.length; i++) {
-      const imagePath = fields.file[i];
+    const filesData = fields.file;
+    for (let i = 0; i < filesData.length; i++) {
+      const imagePath = filesData[i];
       try {
-        // Upload the image
         const result = await cloudinary.uploader.upload(imagePath, options);
-        console.log(result, "3njejjsd");
-        // return result.public_id;
+        urls.push(result.secure_url);
+        if (i === filesData.length - 1 && !!result.secure_url) {
+          console.log("done");
+          return res.status(200).json({ data: urls });
+        }
       } catch (error) {
-        console.error(error, "sakjdsja");
+        console.error(error);
+        return res.status(400);
       }
     }
   });
-
-  return res.sendStatus(200);
 });
 
-app.listen(8000, () => {
-  console.log("listening");
+async function sendFiles(req, res) {}
+
+app.listen(port, () => {
+  console.log(`Listening at port ${port}`);
 });

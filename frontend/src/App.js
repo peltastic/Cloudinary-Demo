@@ -2,6 +2,7 @@ import { useState } from "react";
 
 function App() {
   const [image, setImage] = useState([]);
+  const [message, setMessage] = useState("");
   const uploadHandler = async (e) => {
     const imagesData = [];
     const files = e.target.files;
@@ -20,33 +21,40 @@ function App() {
   };
 
   const upload = async () => {
+    setMessage("Uploading...");
     const formData = new FormData();
     for (let i = 0; i < image.length; i++) {
       let file = image[i];
       formData.append("file", file);
     }
-    await fetch("http://localhost:8000/upload", {
-      method: "POST",
-      // headers: {
-      //   "Content-Type": "application/json",
-      // },
-      // body: JSON.stringify({
-      //   file: image,
-      // }),
-      body: formData,
-    });
+    try {
+      const res = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data) {
+        setMessage("Done!");
+      }
+      console.log(data);
+    } catch (e) {
+      console.log(e)
+      setMessage("Error! Could not upload")
+    }
   };
   return (
     <>
-      <input type="file" onChange={uploadHandler} multiple="multiple" />;
+      <input
+        type="file"
+        onChange={uploadHandler}
+        accept="image/*"
+        multiple="multiple"
+      />
       <button onClick={() => upload(image)}>upload</button>
+      <p>{message}</p>
     </>
   );
 }
 
 export default App;
-
-// const reader = new FormData();
-// reader.append("file", file);
-// setImage(reader);
-// console.log(image);
